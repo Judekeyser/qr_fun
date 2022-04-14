@@ -9,6 +9,24 @@ class QRDecomposer {
         /*
             Compute a single step H of the QR-decomposition algorithm using Householder
             matrices.
+
+            The complexity of `x` computation is as big as the complexity required to compute (a subview of)
+            one of the column of the matrix M.
+                When the matrix M is backed by an array, this is cheap.
+                When it's not the case (for example, M = mult(M1,M2)), we should provide a way to make this step
+                as cheap as O(n), as it's morally n scalar products with the rank-th column of M2. Since evaluation
+                are lazy, the naive multiplication operator may recompute that column over and over again, yielding
+                to a blowing algorithm.
+
+            The complexity of computing the cancellation vector is O(n), as it only requires the computation
+            of a euclidean norm.
+
+            Householder matrix creation is cheap once the previous cancellation vector is known.
+            Similarly, the augment within an identity matrix is cheap.
+                Those two operations could be improved in the case where M is in Hessenberg form,
+                because in that case, we know the resulting matrix acts very lightly by composeLeft
+                (it only impacts at most two columns, and not the entire right-factor).
+                Here again, the composeLeft operator should be overwritten to benefit from the theorem.
          */
         assert M.rowSize() == M.colSize();
         int size = M.colSize() - rank;

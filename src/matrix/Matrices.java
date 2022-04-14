@@ -33,35 +33,8 @@ class Matrices {
         /*
             dim(A * B) = ( row(B) , col(A) )
         */
-        return new Matrix() {
-            @Override
-            public int rowSize() {
-                return right.rowSize();
-            }
-
-            @Override
-            public int colSize() {
-                return left.colSize();
-            }
-
-            @Override
-            public VectorView getColumn(int index) {
-                /* col(A * B, i) = A * col(B, i) */
-                return left.apply(right.getColumn(index));
-            }
-
-            @Override
-            public VectorView getRow(int index) {
-                /* row(A * B, i) = B^T * row(A, i) */
-                return right.transpose().apply(left.getRow(index));
-            }
-
-            @Override
-            public Matrix transpose() {
-                /* (A * B)^T = B^T * A^T */
-                return mult(right.transpose(), left.transpose());
-            }
-        };
+        record Prod(Matrix left, Matrix right) implements ProductOfTwo{}
+        return new Prod(left, right);
     }
 
     static Matrix householder(double[] d) {
@@ -109,6 +82,11 @@ class Matrices {
                         .mapToDouble(i -> i == onePosition ? 1D : 0D)
                         .limit(length)
                         .iterator();
+            }
+
+            @Override
+            public VectorView subView(int skip, int l) {
+                return new IdentitySlice(l, IdentitySlice.this.onePosition - skip);
             }
         }
 
