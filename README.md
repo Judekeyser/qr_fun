@@ -35,3 +35,11 @@ and link them in IntelliJ
 
 After linking the test dependencies, you should be able to run
 the different unit tests.
+
+# Evolution
+
+We would like to improve efficiency of the algorithms using two different strategies:
+1. Start by computing an Hessenberg form for the input matrix, and take benefit of the shape to lower the iterative products to `O(n^2)` complexity
+2. Introduce a simply shift strategy that should improve convergence rate.
+
+For reference, see for example https://www.cs.cornell.edu/~bindel/class/cs6210-f16/lec/2016-10-21.pdf
