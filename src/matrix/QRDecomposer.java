@@ -1,66 +1,9 @@
 package matrix;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import static java.lang.Math.*;
 
 class QRDecomposer {
     /* QR decomposition using Householder reflections */
-
-    static VectorView identitySlice(int length, int onePosition) {
-        return () -> IntStream.iterate(0, i -> i + 1)
-                .mapToDouble(i -> i == onePosition ? 1D : 0D)
-                .limit(length)
-                .iterator();
-    }
-
-    static Matrix upperAugmentWithIdentity(Matrix m, int dim) {
-        assert dim >= m.rowSize();
-        assert dim >= m.colSize();
-        return new Matrix() {
-            /*
-                This implementation takes the matrix m and injects it
-                as a lower sub-matrix of the identity (of dimension dim).
-
-                The identity matrix here is not required: we only need to generate
-                identity-slices and glue them with the slices of m
-             */
-            @Override
-            public int rowSize() {
-                return dim;
-            }
-
-            @Override
-            public int colSize() {
-                return dim;
-            }
-
-            @Override
-            public VectorView getColumn(int index) {
-                var shift = dim - m.rowSize();
-                if(index < shift) {
-                    return identitySlice(dim, index);
-                } else {
-                    var subCol = m.getColumn(index - shift);
-                    var slice = identitySlice(dim - m.colSize(), index);
-                    return slice.then(subCol);
-                }
-            }
-
-            @Override
-            public VectorView getRow(int index) {
-                var shift = dim - m.colSize();
-                if(index < shift) {
-                    return identitySlice(dim, index);
-                } else {
-                    var subRow = m.getRow(index - shift);
-                    var slice = identitySlice(dim - m.rowSize(), index);
-                    return slice.then(subRow);
-                }
-            }
-        };
-    }
 
     static Matrix step(Matrix M, int rank) {
         /*
@@ -72,7 +15,7 @@ class QRDecomposer {
         var x = M.getColumn(rank).subView(rank, size).toArray();
         mutateToCancellingVector(x);
         var householderMatrix = Matrices.householder(x);
-        return upperAugmentWithIdentity(householderMatrix, M.colSize());
+        return Matrices.upperAugmentWithIdentity(householderMatrix, M.colSize());
     }
 
     static Matrix qOfQRDecomposition(Matrix M) {

@@ -7,33 +7,6 @@ import static org.junit.Assert.assertArrayEquals;
 public class QRDecomposerTest {
 
     @Test
-    public void upperAugmentWithIdentity_shouldAugment_givenVerticalRect() {
-        double[][] data = {
-                { 2, 4 },
-                { 6, 4 },
-                { 2, 3 }
-        };
-        var M = Matrices.ofTable(data);
-        var A = QRDecomposer.upperAugmentWithIdentity(M, 5);
-
-        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));
-        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A.transpose()));
-    }
-
-    @Test
-    public void upperAugmentWithIdentity_shouldAugment_givenHorizontalRect() {
-        double[][] data = {
-                { 2, 4, 6 },
-                { 4, 2, 3 }
-        };
-        var M = Matrices.ofTable(data);
-        var A = QRDecomposer.upperAugmentWithIdentity(M, 5);
-
-        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));
-        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A.transpose()));
-    }
-
-    @Test
     public void qrdecomposition_stepByStep() {
         double[][] data = {
                 { 12, -51, 4 },

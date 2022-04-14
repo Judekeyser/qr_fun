@@ -95,4 +95,31 @@ public class MatricesTest {
         assertArrayEquals(new double[] { -4, -7, 4 }, m.getRow(1).toArray(), 0.5);
     }
 
+    @Test
+    public void upperAugmentWithIdentity_shouldAugment_givenVerticalRect() {
+        double[][] data = {
+                { 2, 4 },
+                { 6, 4 },
+                { 2, 3 }
+        };
+        var M = Matrices.ofTable(data);
+        var A = Matrices.upperAugmentWithIdentity(M, 5);
+
+        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));
+        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A.transpose()));
+    }
+
+    @Test
+    public void upperAugmentWithIdentity_shouldAugment_givenHorizontalRect() {
+        double[][] data = {
+                { 2, 4, 6 },
+                { 4, 2, 3 }
+        };
+        var M = Matrices.ofTable(data);
+        var A = Matrices.upperAugmentWithIdentity(M, 5);
+
+        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));
+        System.out.printf("-------%n%s%n-------%n", Matrix.toString(A.transpose()));
+    }
+
 }
