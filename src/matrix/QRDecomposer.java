@@ -1,5 +1,7 @@
 package matrix;
 
+import java.util.Arrays;
+
 import static java.lang.Math.*;
 
 class QRDecomposer {
@@ -16,7 +18,8 @@ class QRDecomposer {
                 When it's not the case (for example, M = mult(M1,M2)), we should provide a way to make this step
                 as cheap as O(n), as it's morally n scalar products with the rank-th column of M2. Since evaluation
                 are lazy, the naive multiplication operator may recompute that column over and over again, yielding
-                to a blowing algorithm.
+                to a blowing algorithm. Caching the rows of the left-factors is less sensitive, because we know
+                they will be backed by an array somehow (it's always Householder matrices on the left).
 
             The complexity of computing the cancellation vector is O(n), as it only requires the computation
             of a euclidean norm.
@@ -45,17 +48,52 @@ class QRDecomposer {
             The matrix R can be recovered directly from the equation
                 M = QR
                     R = Q^T M
+
+            As explained in step, we *must* rely on a multiplication principle that allow
+            caching of the columns of the left member. This is because otherwise, we risk to create
+            an algorithm that blows-up in complexity. We therefore override the ProductOfTwo trait
+            locally to bring a cache feature on the right-hand side.
          */
         assert M.rowSize() == M.colSize();
         if (M.rowSize() == 1) return M;
+
+        class CachedProduct implements ProductOfTwo {
+            record Cache(int columnIndex, VectorView data) {}
+
+            Cache cache = null;
+            final Matrix left, right;
+            CachedProduct(Matrix left, Matrix right) {
+                this.left = left;
+                this.right = right;
+            }
+            @Override
+            public Matrix left() {
+                return left;
+            }
+
+            @Override
+            public Matrix right() {
+                return right;
+            }
+
+            @Override
+            public VectorView getColumn(int index) {
+                if(cache == null || cache.columnIndex != index) {
+                    var data = right.getColumn(index).toArray();
+                    cache = new Cache(index, () -> Arrays.stream(data).iterator());
+                } assert cache.columnIndex == index;
+
+                return left.apply(cache.data);
+            }
+        }
 
         Matrix[] chain = new Matrix[M.rowSize() - 1];
         chain[0] = step(M, 0);
         Matrix cumul = chain[0];
 
         for(int i = 1; i < chain.length; i++) {
-            chain[i] = step(cumul.composeLeft(M), i);
-            cumul = chain[i].composeLeft(cumul);
+            chain[i] = step(new CachedProduct(cumul, M), i);
+            cumul = new CachedProduct(chain[i], cumul);
         }
 
         cumul = chain[0];

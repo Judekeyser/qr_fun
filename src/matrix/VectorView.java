@@ -27,37 +27,34 @@ public interface VectorView  {
             it would be too hard to implement a custom sub-view operation for results of then.
             We thus do not override that operator.
          */
-        return new VectorView() {
-            @Override
-            public PrimitiveIterator.OfDouble iterator() {
-                class Impl implements PrimitiveIterator.OfDouble {
-                    boolean switchOn = true;
-                    PrimitiveIterator.OfDouble itCursor = VectorView.this.iterator();
-                    @Override
-                    public double nextDouble() {
-                        if(hasNext())
-                            return itCursor.nextDouble();
-                        else throw new NoSuchElementException();
-                    }
+        return () -> {
+            class Impl implements PrimitiveIterator.OfDouble {
+                boolean switchOn = true;
+                OfDouble itCursor = VectorView.this.iterator();
+                @Override
+                public double nextDouble() {
+                    if(hasNext())
+                        return itCursor.nextDouble();
+                    else throw new NoSuchElementException();
+                }
 
-                    /**
-                     * Watch out, hasNext here has a side-effect
-                     * on the object, which makes it tricky. The hasNext() method must be called
-                     * somehow on the nextDouble() implementation, to guarantee coherence.
-                     */
-                    @Override
-                    public boolean hasNext() {
-                        if(switchOn) {
-                            boolean hasNext = itCursor.hasNext();
-                            if(! hasNext) {
-                                switchOn = false;
-                                itCursor = next.iterator();
-                                return hasNext();
-                            } return true;
-                        } else return itCursor.hasNext();
-                    }
-                } return new Impl();
-            }
+                /**
+                 * Watch out, hasNext here has a side-effect
+                 * on the object, which makes it tricky. The hasNext() method must be called
+                 * somehow on the nextDouble() implementation, to guarantee coherence.
+                 */
+                @Override
+                public boolean hasNext() {
+                    if(switchOn) {
+                        boolean hasNext = itCursor.hasNext();
+                        if(! hasNext) {
+                            switchOn = false;
+                            itCursor = next.iterator();
+                            return hasNext();
+                        } return true;
+                    } else return itCursor.hasNext();
+                }
+            } return new Impl();
         };
     }
 
