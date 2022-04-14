@@ -1,8 +1,10 @@
 package matrix;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static java.lang.Math.*;
+import static java.util.Collections.singletonList;
 
 class QRDecomposer {
     /* QR decomposition using Householder reflections */
@@ -39,7 +41,7 @@ class QRDecomposer {
         return Matrices.upperAugmentWithIdentity(householderMatrix, M.colSize());
     }
 
-    static Matrix qOfQRDecomposition(Matrix M) {
+    static List<Matrix> qOfQRDecomposition(Matrix M) {
         /*
             Iterates the full steps of the QR-decomposition algorithm using Householder
             matrices.
@@ -50,12 +52,26 @@ class QRDecomposer {
                     R = Q^T M
 
             As explained in step, we *must* rely on a multiplication principle that allow
-            caching of the columns of the left member. This is because otherwise, we risk to create
+            caching of the columns of the left member. This is because otherwise, we risk creating
             an algorithm that blows-up in complexity. We therefore override the ProductOfTwo trait
-            locally to bring a cache feature on the right-hand side.
+            locally to bring a cache feature on the right-hand side:
+
+            Complexity:
+                Computing H0 asks to compute the 0-th column of M
+                Computing H1 asks to compute the 1-th column of H0 * M:
+                    so (n rows) x column(M, 1)
+                Computing H2 asks to compute the 2-th column of H1 * H0 * M:
+                    so (n rows) x column(H0 * M, 2)
+                    so first (n rows x column(M, 2)) and then (n rows) x (the previous)
+                and so on. We see that if we don't perform proper caching on the columns on the right-hand
+                factors, we will exponentially blow in complexity.
+
+            In order to *not* introduce a too wide footprint on the call site, proper caching is
+            eventually removed at the end of the method. The matrices returned by this algorithms
+            are the original Householder matrices.
          */
         assert M.rowSize() == M.colSize();
-        if (M.rowSize() == 1) return M;
+        if (M.rowSize() == 1) return singletonList(M);
 
         class CachedProduct implements ProductOfTwo {
             final Matrix left, right;
@@ -89,11 +105,7 @@ class QRDecomposer {
             cumul = new CachedProduct(chain[i], cumul);
         }
 
-        cumul = chain[0];
-        for(int i = 1; i < chain.length; i++)
-            cumul = chain[i].composeLeft(cumul);
-
-        return cumul.transpose();
+        return Arrays.asList(chain);
     }
 
     private static void mutateToCancellingVector(double[] x) {

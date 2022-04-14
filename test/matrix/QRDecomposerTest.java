@@ -2,6 +2,8 @@ package matrix;
 
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertArrayEquals;
 
 public class QRDecomposerTest {
@@ -105,7 +107,7 @@ public class QRDecomposerTest {
                 { -4, 24, -41 }
         };
         var A = Matrices.ofTable(data);
-        var Q = QRDecomposer.qOfQRDecomposition(A);
+        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
 
         { // check Q
             assertArrayEquals(new double[] { 6.0/7, 69.0/175, -58.0/175 }, Q.getRow(0).toArray(), 0.000_001);
@@ -163,7 +165,7 @@ public class QRDecomposerTest {
                 { 0, 13, 12 , 70, 30}
         };
         var A = Matrices.ofTable(data);
-        var Q = QRDecomposer.qOfQRDecomposition(A);
+        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
         var R = Q.transpose().composeLeft(A);
         var Ab = Q.composeLeft(R);
 
@@ -200,6 +202,60 @@ public class QRDecomposerTest {
             System.out.println("Found R:");
             System.out.println(Matrix.toString(Q.transpose().composeLeft(A)));
         }
+    }
+
+    @Test
+    public void qrdecomposition_allSteps_given2x2() {
+        double[][] data = {
+                { 12, -51 },
+                { 6, 167 }
+        };
+        var A = Matrices.ofTable(data);
+        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
+        var R = Q.transpose().composeLeft(A);
+        var Ab = Q.composeLeft(R);
+
+        System.out.println("QR Decomposition of matrix A");
+        System.out.println("Q computed as:");
+        System.out.println(Matrix.toString(Q));
+        System.out.println("R computed as:");
+        System.out.println(Matrix.toString(R));
+        System.out.println("Computing product QR gave:");
+        System.out.println(Matrix.toString(Ab));
+
+        { // check A = QR
+
+            for(int i = 0; i < 2; i++)
+                assertArrayEquals("Comparing row %d".formatted(i),
+                        A.getRow(i).toArray(), Ab.getRow(i).toArray(),
+                        0.000_001
+                );
+            for(int i = 0; i < 2; i++)
+                assertArrayEquals("Comparing column %d".formatted(i),
+                        A.getColumn(i).toArray(), Ab.getColumn(i).toArray(),
+                        0.000_001
+                );
+        }
+
+        { // Pretty prints
+            System.out.println("Initial matrix A:");
+            System.out.println(Matrix.toString(A));
+            System.out.println("-----------");
+            System.out.println("Find Q and R such that A = QR, R upper triangular, Q orthogonal");
+            System.out.println("-----------");
+            System.out.println("Found Q:");
+            System.out.println(Matrix.toString(Q));
+            System.out.println("Found R:");
+            System.out.println(Matrix.toString(Q.transpose().composeLeft(A)));
+        }
+    }
+
+    private Matrix QFromListOfHouseholder(List<Matrix> householderMatrices) {
+        var cumul = householderMatrices.get(0);
+        var it = householderMatrices.iterator(); it.next();
+        while(it.hasNext())
+            cumul = it.next().composeLeft(cumul);
+        return cumul.transpose();
     }
 
 }

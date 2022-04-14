@@ -28,9 +28,28 @@ class EigenValueSolver {
         var cursor = Matrices.ofTable(matrixToData(M));
 
         while(iterationBound-- > 0) {
-            var Q = QRDecomposer.qOfQRDecomposition(cursor);
-            var R = Q.transpose().composeLeft(cursor);
-            data = matrixToData(R.composeLeft(Q));
+            /*
+                Given H0, H1, H2, ..., Hk we know that
+                    Q = (Hk * ... * H2 * H1 * H0)^T
+                and Q is orthogonal. In particular, we know that
+                    R = Q^T * A
+                      = Hk * ... * H2 * H1 * H0 * A
+                and
+                    RQ = Q' * A * Q'^T
+                    Q' = Q^T = (Hk * ... * (H2 * (H1 * H0))...)
+                In order to mitigate lazy computations effects, we reduce this computation
+                factor-by-factor, and store the information in a data source matrix.
+             */
+            var householderList = QRDecomposer.qOfQRDecomposition(cursor);
+            Matrix qBis; { // Compute (Hk * ... * (H2 * (H1 * H0))...)
+                var it = householderList.iterator();
+                double[][] qBisData = matrixToData(it.next());
+                while(it.hasNext())
+                    qBisData = matrixToData(it.next().composeLeft(Matrices.ofTable(qBisData)));
+                qBis = Matrices.ofTable(qBisData);
+            }
+            data = matrixToData(qBis.composeLeft(cursor));
+            data = matrixToData(Matrices.ofTable(data).composeLeft(qBis.transpose()));
             if(isUpperTriangular(data, sensitivity)) break;
             cursor = Matrices.ofTable(data);
         }
