@@ -58,9 +58,6 @@ class QRDecomposer {
         if (M.rowSize() == 1) return M;
 
         class CachedProduct implements ProductOfTwo {
-            record Cache(int columnIndex, VectorView data) {}
-
-            Cache cache = null;
             final Matrix left, right;
             CachedProduct(Matrix left, Matrix right) {
                 this.left = left;
@@ -78,21 +75,17 @@ class QRDecomposer {
 
             @Override
             public VectorView getColumn(int index) {
-                if(cache == null || cache.columnIndex != index) {
-                    var data = right.getColumn(index).toArray();
-                    cache = new Cache(index, () -> Arrays.stream(data).iterator());
-                } assert cache.columnIndex == index;
-
-                return left.apply(cache.data);
+                var data = right.getColumn(index).toArray();
+                return left.apply(() -> Arrays.stream(data).iterator());
             }
         }
 
         Matrix[] chain = new Matrix[M.rowSize() - 1];
         chain[0] = step(M, 0);
-        Matrix cumul = chain[0];
+        Matrix cumul = new CachedProduct(chain[0], M);
 
         for(int i = 1; i < chain.length; i++) {
-            chain[i] = step(new CachedProduct(cumul, M), i);
+            chain[i] = step(cumul, i);
             cumul = new CachedProduct(chain[i], cumul);
         }
 

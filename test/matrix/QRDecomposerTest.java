@@ -153,4 +153,53 @@ public class QRDecomposerTest {
         }
     }
 
+    @Test
+    public void qrdecomposition_allSteps_given5x5() {
+        double[][] data = {
+                { 12, -51, 4, 0, 0 },
+                { 6, 167, -68, 1, -12 },
+                { -4, 24, -41, 14, 24 },
+                { -16, 0, 0, 4, 56 },
+                { 0, 13, 12 , 70, 30}
+        };
+        var A = Matrices.ofTable(data);
+        var Q = QRDecomposer.qOfQRDecomposition(A);
+        var R = Q.transpose().composeLeft(A);
+        var Ab = Q.composeLeft(R);
+
+        System.out.println("QR Decomposition of matrix A");
+        System.out.println("Q computed as:");
+        System.out.println(Matrix.toString(Q));
+        System.out.println("R computed as:");
+        System.out.println(Matrix.toString(R));
+        System.out.println("Computing product QR gave:");
+        System.out.println(Matrix.toString(Ab));
+
+        { // check A = QR
+
+            for(int i = 0; i < 3; i++)
+                assertArrayEquals("Comparing row %d".formatted(i),
+                        A.getRow(i).toArray(), Ab.getRow(i).toArray(),
+                        0.000_001
+                );
+            for(int i = 0; i < 3; i++)
+                assertArrayEquals("Comparing column %d".formatted(i),
+                        A.getColumn(i).toArray(), Ab.getColumn(i).toArray(),
+                        0.000_001
+                );
+        }
+
+        { // Pretty prints
+            System.out.println("Initial matrix A:");
+            System.out.println(Matrix.toString(A));
+            System.out.println("-----------");
+            System.out.println("Find Q and R such that A = QR, R upper triangular, Q orthogonal");
+            System.out.println("-----------");
+            System.out.println("Found Q:");
+            System.out.println(Matrix.toString(Q));
+            System.out.println("Found R:");
+            System.out.println(Matrix.toString(Q.transpose().composeLeft(A)));
+        }
+    }
+
 }
