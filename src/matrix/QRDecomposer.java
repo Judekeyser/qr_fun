@@ -1,6 +1,5 @@
 package matrix;
 
-import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -89,41 +88,13 @@ class QRDecomposer {
         assert M.rowSize() == M.colSize();
         if (M.rowSize() == 1) return M;
 
-        class WithLastColumnCache extends MatrixByDelegation {
-            /*
-                Those matrices are caching the last column that was required.
-
-                This is done to speed up the computation of col(E * A, i),
-                which requires row(E)-times the same column of A.
-
-                Caching means storing temporarily the column of A as a double[], in a strong reference.
-
-                If columns of A are pre-encoded in advance, the advantage is really low.
-                However, in the QR-decomposition algorithm, it won't be the case very long.
-                This allows to not re-process the entire chain of matrices to compute, for every row of E.
-             */
-            record LastColumnComputation(int rank, double[] data) {}
-
-            WithLastColumnCache(Matrix wrapped) { super(wrapped); }
-            LastColumnComputation lastComputedColumn = null;
-
-            @Override
-            public VectorView getColumn(int index) {
-                if(lastComputedColumn == null || lastComputedColumn.rank != index)
-                    lastComputedColumn = new LastColumnComputation(index, super.getColumn(index).toArray());
-                assert lastComputedColumn.rank == index;
-                var data = lastComputedColumn.data;
-                return () -> Arrays.stream(data).iterator();
-            }
-        }
-
         Matrix[] chain = new Matrix[M.rowSize() - 1];
         chain[0] = step(M, 0);
-        Matrix cumul = new WithLastColumnCache(chain[0]);
+        Matrix cumul = chain[0];
 
         for(int i = 1; i < chain.length; i++) {
             chain[i] = step(cumul.composeLeft(M), i);
-            cumul = new WithLastColumnCache(chain[i].composeLeft(cumul));
+            cumul = chain[i].composeLeft(cumul);
         }
 
         cumul = chain[0];
