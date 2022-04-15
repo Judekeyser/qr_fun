@@ -3,9 +3,10 @@ package matrix;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Random;
 
+import static java.lang.Math.*;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 public class EigenValueSolverTest {
 
@@ -33,10 +34,34 @@ public class EigenValueSolverTest {
         test(data, 200, 0.000_1, eigenvalues);
     }
 
+    @Test
+    public void eigenValues_shouldBeCorrectAndSorted_onExample5x5() {
+        double[][] data = {
+                { 12, -51, 4, 0, 0 },
+                { -51, 167, -68, 1, -12 },
+                { 4, -68, -41, 7, 4 },
+                { 0, 1, 7, 4, 56 },
+                { 0, -12, 4 , 56, 30}
+        };
+        double[] eigenvalues = new double[] { 201.562, 73.976, -64.376, -39.494, 0.331 };
+
+        test(data, 300, 0.000_1, eigenvalues);
+    }
+
     private void test(double[][] data, int iterationBound, double sensitivity, double[] expectations) {
-        double[] eigenvalues = new double[3];
+        var generator = new Random(6466585);
+        double[] eigenvalues = new double[expectations.length];
         var A = Matrices.ofTable(data);
-        var efficiency = EigenValueSolver.flushEigenvalues(A, iterationBound, sensitivity, eigenvalues);
+        var efficiency = EigenValueSolver.flushEigenvalues(
+                A,
+                $ -> {
+                    var lambda = generator.nextDouble();
+                    var i = generator.nextInt(data.length);
+                    var w1 = $[i][i];
+                    return (1.1 - lambda / 5) * w1;
+                },
+                iterationBound, sensitivity,
+                eigenvalues);
 
         { // Pretty prints
             System.out.println("Initial matrix A:");
@@ -48,7 +73,7 @@ public class EigenValueSolverTest {
             System.out.printf("Took %d steps to iterate the process%n", iterationBound - efficiency);
             {
                 double sum = Arrays.stream(eigenvalues).map(Math::abs).sum();
-                for(int i = 0; i < 3; i++)
+                for(int i = 0; i < expectations.length; i++)
                     System.out.printf("\tStrength of space of dimension %d: %.2f%n",
                             i+1,
                             Arrays.stream(eigenvalues).map(Math::abs).limit(i+1).sum()/sum
@@ -58,6 +83,15 @@ public class EigenValueSolverTest {
 
             assertArrayEquals(expectations, eigenvalues, 10*sensitivity);
         }
+    }
+    private static double wilkinsonShift(double[][] data, int s) {
+        var n = data.length - 1 - s;
+        assert n >= 0;
+        var c = data[n][n];
+        var a = data[n-1][n-1];
+        var b = (data[n-1][n] + data[n][n-1]) / 2;
+        var d = (a - c) / 2;
+        return c - (d < 0 ? -1 : 1) * pow(b, 2) / (abs(d) + hypot(d, b));
     }
 
 }
