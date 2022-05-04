@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import static java.lang.Math.*;
+import static matrix.Matrix.ofTable;
 import static org.junit.Assert.assertArrayEquals;
 
 public class EigenValueSolverTest {
@@ -51,17 +52,27 @@ public class EigenValueSolverTest {
     private void test(double[][] data, int iterationBound, double sensitivity, double[] expectations) {
         var generator = new Random(6466585);
         double[] eigenvalues = new double[expectations.length];
-        var A = Matrices.ofTable(data);
-        var efficiency = EigenValueSolver.flushEigenvalues(
-                A,
-                $ -> {
-                    var lambda = generator.nextDouble();
-                    var i = generator.nextInt(data.length);
-                    var w1 = $[i][i];
-                    return (1.1 - lambda / 5) * w1;
-                },
-                iterationBound, sensitivity,
-                eigenvalues);
+        var A = ofTable(data);
+        var solver = new EigenValueSolver() {
+            @Override
+            public double sensitivity() {
+                return sensitivity;
+            }
+
+            @Override
+            public int iterationBound() {
+                return iterationBound;
+            }
+
+            @Override
+            public double shiftInContext(double[][] data) {
+                var lambda = generator.nextDouble();
+                var i = generator.nextInt(data.length);
+                var w1 = data[i][i];
+                return (1.1 - lambda / 5) * w1;
+            }
+        };
+        var efficiency = solver.flushEigenvalues(A, eigenvalues);
 
         { // Pretty prints
             System.out.println("Initial matrix A:");

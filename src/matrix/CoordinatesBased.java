@@ -1,5 +1,6 @@
 package matrix;
 
+import java.util.Arrays;
 import java.util.PrimitiveIterator;
 
 interface CoordinatesBased extends Matrix {
@@ -87,5 +88,28 @@ interface CoordinatesBased extends Matrix {
             }
         }
         return new ColSlice();
+    }
+
+    static Matrix ofTable(double[][] data) {
+        assert Arrays.stream(data).mapToInt(arr -> arr.length).allMatch(i -> i == data[0].length)
+                : "The data table is not rectangular";
+
+        class Impl implements CoordinatesBased {
+            @Override
+            public double getEntry(int rowIndex, int colIndex) {
+                return data[rowIndex][colIndex];
+            }
+
+            @Override
+            public int rowSize() {
+                return data[0].length;
+            }
+
+            @Override
+            public int colSize() {
+                return data.length;
+            }
+        }
+        return new Impl();
     }
 }

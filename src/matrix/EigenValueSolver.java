@@ -2,14 +2,21 @@ package matrix;
 
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.function.ToDoubleFunction;
 
 import static java.lang.Math.*;
+import static matrix.Matrix.ofTable;
 
-class EigenValueSolver {
+interface EigenValueSolver extends QRDecomposer
+{
     /* Use the QR decomposer to infer eigen values */
 
-    static int flushEigenvalues(Matrix M, ToDoubleFunction<double[][]> shift, int iterationBound, double sensitivity, double[] eigenValues) {
+    double sensitivity();
+
+    int iterationBound();
+
+    double shiftInContext(double[][] data);
+
+    default int flushEigenvalues(Matrix M, double[] eigenValues) {
         /*
             This algorithm implements the iterative QR-eigenvalue iteration
                 C = M
@@ -41,8 +48,9 @@ class EigenValueSolver {
         assert eigenValues.length == M.rowSize();
 
         double[][] data = matrixToData(M);
+        var iterationBound = iterationBound();
 
-        while(iterationBound-- > 0 && !isUpperTriangular(data, sensitivity)) {
+        while(iterationBound-- > 0 && !isUpperTriangular(data)) {
             /*
                 Given H0, H1, H2, ..., Hk we know that
                     Q = (Hk * ... * H2 * H1 * H0)^T
@@ -54,20 +62,24 @@ class EigenValueSolver {
                     Q' = Q^T = (Hk * ... * (H2 * (H1 * H0))...)
                 In order to mitigate lazy computations effects, we reduce this computation
                 factor-by-factor, and store the information in a data source matrix.
+
+                The computation of Q' A Q'^T can be improved for Hessenberg matrices
              */
-            double s = shift.applyAsDouble(data);
+            double s = shiftInContext(data);
             shifts(data, -s);
-            var cursor = Matrices.ofTable(data);
-            var householderList = QRDecomposer.qOfQRDecomposition(cursor);
-            Matrix qBis; { // Compute (Hk * ... * (H2 * (H1 * H0))...)
-                var it = householderList.iterator();
-                double[][] qBisData = matrixToData(it.next());
-                while(it.hasNext())
-                    qBisData = matrixToData(it.next().composeLeft(Matrices.ofTable(qBisData)));
-                qBis = Matrices.ofTable(qBisData);
+            var cursor = ofTable(data);
+            var householderList = householderSuccessiveReflections(cursor);
+            { // compute RQ = Q' A Q'^T
+                Matrix qBis;
+                { // Compute (Hk * ... * (H2 * (H1 * H0))...)
+                    var it = householderList.iterator();
+                    double[][] qBisData = matrixToData(it.next());
+                    while (it.hasNext()) qBisData = matrixToData(it.next().composeLeft(ofTable(qBisData)));
+                    qBis = ofTable(qBisData);
+                }
+                data = matrixToData(qBis.composeLeft(cursor));
+                data = matrixToData(ofTable(data).composeLeft(qBis.transpose()));
             }
-            data = matrixToData(qBis.composeLeft(cursor));
-            data = matrixToData(Matrices.ofTable(data).composeLeft(qBis.transpose()));
             shifts(data, s);
         }
 
@@ -93,11 +105,11 @@ class EigenValueSolver {
         return data;
     }
 
-    private static boolean isUpperTriangular(double[][] data, double sensitivity) {
+    private boolean isUpperTriangular(double[][] data) {
         boolean isDiagonal = true;
         for(int i = 0; i < data.length; i++) {
             for(int j = 0; j < i; j++) {
-                isDiagonal &= abs(data[i][j]) < sensitivity;
+                isDiagonal &= abs(data[i][j]) < sensitivity();
             }
         }
         return isDiagonal;

@@ -2,8 +2,7 @@ package matrix;
 
 import org.junit.Test;
 
-import static matrix.Matrices.mult;
-import static matrix.Matrices.ofTable;
+import static matrix.Matrix.ofTable;
 import static org.junit.Assert.*;
 
 public class MatricesTest {
@@ -36,7 +35,7 @@ public class MatricesTest {
         };
         Matrix A = ofTable(dataA);
         Matrix B = ofTable(dataB);
-        Matrix AB = mult(A, B);
+        Matrix AB = A.composeLeft(B);
 
         assertEquals(3, A.colSize());
         assertEquals(2, A.rowSize());
@@ -64,7 +63,7 @@ public class MatricesTest {
         Matrix B = ofTable(dataB);
         assertSame(A, A.transpose().transpose());
 
-        Matrix AB = mult(A, B);
+        Matrix AB = A.composeLeft(B);
         assertNotSame(AB, AB.transpose().transpose());
         assertEquals(5, AB.rowSize());
         assertEquals(3, AB.colSize());
@@ -102,7 +101,7 @@ public class MatricesTest {
                 { 6, 4 },
                 { 2, 3 }
         };
-        var M = Matrices.ofTable(data);
+        var M = ofTable(data);
         var A = Matrices.upperAugmentWithIdentity(M, 5);
 
         System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));
@@ -115,7 +114,7 @@ public class MatricesTest {
                 { 2, 4, 6 },
                 { 4, 2, 3 }
         };
-        var M = Matrices.ofTable(data);
+        var M = ofTable(data);
         var A = Matrices.upperAugmentWithIdentity(M, 5);
 
         System.out.printf("-------%n%s%n-------%n", Matrix.toString(A));

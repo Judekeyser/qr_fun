@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import java.util.stream.DoubleStream;
 
-import static matrix.Matrices.ofTable;
+import static matrix.Matrix.ofTable;
 import static org.junit.Assert.assertArrayEquals;
 
 public class VectorViewTest {

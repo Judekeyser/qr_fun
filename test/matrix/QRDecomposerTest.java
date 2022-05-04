@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static matrix.Matrix.ofTable;
 import static org.junit.Assert.assertArrayEquals;
 
 public class QRDecomposerTest {
@@ -15,8 +16,8 @@ public class QRDecomposerTest {
                 { 6, 167, -68 },
                 { -4, 24, -41 }
         };
-        var A = Matrices.ofTable(data);
-        var H1 = QRDecomposer.step(A, 0);
+        var A = ofTable(data);
+        var H1 = new QRDecomposer(){}.step(A, 0);
 
         { // check H1
             assertArrayEquals(new double[] { 6.0/7 , 3.0/7, -2.0/7 }, H1.getRow(0).toArray(), 0.000_001);
@@ -29,7 +30,7 @@ public class QRDecomposerTest {
         }
 
         { // check product
-            var prod = Matrices.mult(H1, A);
+            var prod = H1.composeLeft(A);
             assertArrayEquals(new double[]{14.000000, 21.000000, -14.000000}, prod.getRow(0).toArray(), 0.000_001);
             assertArrayEquals(new double[]{-0.000000, -49.000000, -14.000000}, prod.getRow(1).toArray(), 0.000_001);
             assertArrayEquals(new double[]{0.000000, 168.000000, -77.000000}, prod.getRow(2).toArray(), 0.000_001);
@@ -39,7 +40,7 @@ public class QRDecomposerTest {
             assertArrayEquals(new double[]{-14.000000, -14.000000, -77.000000}, prod.getColumn(2).toArray(), 0.000_001);
         }
 
-        var H2 = QRDecomposer.step(H1.composeLeft(A), 1);
+        var H2 = new QRDecomposer(){}.step(H1.composeLeft(A), 1);
 
         { // check H2
             assertArrayEquals(new double[] { 1, 0, 0 }, H2.getRow(0).toArray(), 0.000_001);
@@ -106,8 +107,8 @@ public class QRDecomposerTest {
                 { 6, 167, -68 },
                 { -4, 24, -41 }
         };
-        var A = Matrices.ofTable(data);
-        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
+        var A = ofTable(data);
+        var Q = QFromListOfHouseholder(new QRDecomposer(){}.householderSuccessiveReflections(A));
 
         { // check Q
             assertArrayEquals(new double[] { 6.0/7, 69.0/175, -58.0/175 }, Q.getRow(0).toArray(), 0.000_001);
@@ -164,8 +165,8 @@ public class QRDecomposerTest {
                 { -16, 0, 0, 4, 56 },
                 { 0, 13, 12 , 70, 30}
         };
-        var A = Matrices.ofTable(data);
-        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
+        var A = ofTable(data);
+        var Q = QFromListOfHouseholder(new QRDecomposer(){}.householderSuccessiveReflections(A));
         var R = Q.transpose().composeLeft(A);
         var Ab = Q.composeLeft(R);
 
@@ -210,8 +211,8 @@ public class QRDecomposerTest {
                 { 12, -51 },
                 { 6, 167 }
         };
-        var A = Matrices.ofTable(data);
-        var Q = QFromListOfHouseholder(QRDecomposer.qOfQRDecomposition(A));
+        var A = ofTable(data);
+        var Q = QFromListOfHouseholder(new QRDecomposer() {}.householderSuccessiveReflections(A));
         var R = Q.transpose().composeLeft(A);
         var Ab = Q.composeLeft(R);
 
@@ -224,7 +225,6 @@ public class QRDecomposerTest {
         System.out.println(Matrix.toString(Ab));
 
         { // check A = QR
-
             for(int i = 0; i < 2; i++)
                 assertArrayEquals("Comparing row %d".formatted(i),
                         A.getRow(i).toArray(), Ab.getRow(i).toArray(),

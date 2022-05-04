@@ -91,7 +91,8 @@ public interface Matrix {
 
             This is a group action (but we do not encode the identity in a specific way).
          */
-        return Matrices.mult(this, rightFactor);
+        record Prod(Matrix left, Matrix right) implements ProductOfTwo{}
+        return new Prod(this, rightFactor);
     }
 
     static String toString(Matrix matrix) { // Java doesn't allow interfaces to extend methods of Object
@@ -103,6 +104,10 @@ public interface Matrix {
             big.add("[ %s ]".formatted(joiner.toString()));
         }
         return big.toString();
+    }
+
+    static Matrix ofTable(double[][] data) {
+        return CoordinatesBased.ofTable(data);
     }
 
 }

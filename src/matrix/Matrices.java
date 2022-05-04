@@ -1,41 +1,9 @@
 package matrix;
 
-import java.util.Arrays;
 import java.util.PrimitiveIterator;
 import java.util.stream.IntStream;
 
 class Matrices {
-
-    static Matrix ofTable(double[][] data) {
-        assert Arrays.stream(data).mapToInt(arr -> arr.length).allMatch(i -> i == data[0].length)
-                : "The data table is not rectangular";
-
-        class Impl implements CoordinatesBased {
-            @Override
-            public double getEntry(int rowIndex, int colIndex) {
-                return data[rowIndex][colIndex];
-            }
-
-            @Override
-            public int rowSize() {
-                return data[0].length;
-            }
-
-            @Override
-            public int colSize() {
-                return data.length;
-            }
-        }
-        return new Impl();
-    }
-
-    static Matrix mult(Matrix left, Matrix right) {
-        /*
-            dim(A * B) = ( row(B) , col(A) )
-        */
-        record Prod(Matrix left, Matrix right) implements ProductOfTwo{}
-        return new Prod(left, right);
-    }
 
     static Matrix householder(double[] d) {
         /*

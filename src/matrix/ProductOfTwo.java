@@ -1,6 +1,6 @@
 package matrix;
 
-public interface ProductOfTwo extends Matrix {
+interface ProductOfTwo extends Matrix {
     /*
         The product of two matrices, in its simplest form
      */
@@ -33,7 +33,7 @@ public interface ProductOfTwo extends Matrix {
     @Override
     default Matrix transpose() {
         /* (A * B)^T = B^T * A^T */
-        return Matrices.mult(right().transpose(), left().transpose());
+        return right().transpose().composeLeft(left().transpose());
     }
 
 }
